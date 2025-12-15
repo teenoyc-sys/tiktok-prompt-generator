@@ -1,897 +1,313 @@
-```html
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PromptPro - TikTok Product Review Generator</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    :root{
-      --primary:#6366f1; --secondary:#a855f7; --accent:#ec4899;
-      --dark:#0f172a; --darker:#020617; --light:#f8fafc; --border:#1e293b;
-    }
-    html,body{ width:100%; height:100%; overflow:hidden; }
-    body{
-      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
-      background:linear-gradient(135deg,var(--darker) 0%, #1a1a2e 50%, #16213e 100%);
-      color:#e2e8f0; position:relative;
-    }
-    body::before{
-      content:''; position:fixed; inset:0;
-      background:
-        radial-gradient(circle at 20% 50%, rgba(99,102,241,.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(168,85,247,.15) 0%, transparent 50%);
-      pointer-events:none; z-index:0;
-    }
-    .main-container{ position:relative; z-index:1; display:flex; width:100%; height:100vh; }
-    .sidebar{
-      width:50%; display:flex; flex-direction:column;
-      border-right:1px solid var(--border);
-      background:linear-gradient(135deg, rgba(2,6,23,.8) 0%, rgba(15,23,42,.6) 100%);
-    }
-    .sidebar-header{
-      padding:30px; border-bottom:1px solid var(--border);
-      background:linear-gradient(135deg, rgba(99,102,241,.1) 0%, rgba(168,85,247,.1) 100%);
-    }
-    .sidebar-header h1{
-      font-size:28px; font-weight:800; margin-bottom:5px;
-      background:linear-gradient(135deg,#6366f1,#a855f7,#ec4899);
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-    }
-    .sidebar-header p{ font-size:12px; color:#cbd5e1; }
-    .sidebar-content{
-      flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:20px;
-    }
-    .sidebar-content::-webkit-scrollbar{ width:8px; }
-    .sidebar-content::-webkit-scrollbar-track{ background:rgba(30,41,59,.5); }
-    .sidebar-content::-webkit-scrollbar-thumb{
-      background:linear-gradient(135deg,var(--primary),var(--secondary)); border-radius:4px;
-    }
-    .sidebar-content::-webkit-scrollbar-thumb:hover{
-      background:linear-gradient(135deg,var(--secondary),var(--accent));
-    }
-
-    .form-section{
-      background:linear-gradient(135deg, rgba(30,41,59,.5) 0%, rgba(51,65,85,.3) 100%);
-      border:1px solid var(--border); border-radius:16px; padding:20px; backdrop-filter:blur(10px);
-    }
-    .section-title{
-      font-size:16px; font-weight:700; margin-bottom:15px;
-      display:flex; align-items:center; gap:8px; color:#f1f5f9;
-    }
-    .section-title::before{
-      content:''; width:3px; height:16px;
-      background:linear-gradient(135deg,#6366f1,#a855f7); border-radius:2px;
-    }
-    .form-group{ margin-bottom:16px; }
-    label{
-      display:block; margin-bottom:8px; font-weight:600; color:#f1f5f9;
-      font-size:12px; text-transform:uppercase; letter-spacing:.5px;
-    }
-    input[type="text"], input[type="file"], textarea, select{
-      width:100%; padding:12px 14px;
-      background:rgba(15,23,42,.8); border:1px solid var(--border); border-radius:10px;
-      color:#e2e8f0; font-size:13px; font-family:inherit; transition:all .3s ease;
-    }
-    input[type="text"]:focus, textarea:focus, select:focus{
-      outline:none; border-color:var(--primary);
-      background:rgba(15,23,42,.95); box-shadow:0 0 0 3px rgba(99,102,241,.15);
-    }
-    textarea{ resize:vertical; min-height:80px; font-family:'Segoe UI',sans-serif; }
-
-    .image-preview{
-      margin-top:10px; border-radius:10px; overflow:hidden;
-      max-height:150px; background:rgba(0,0,0,.3); display:none;
-    }
-    .image-preview.show{ display:block; }
-    .image-preview img{ width:100%; height:100%; object-fit:cover; }
-
-    .gender-selector{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .gender-btn{
-      padding:12px; border:2px solid var(--border);
-      background:rgba(15,23,42,.8); color:#cbd5e1; border-radius:10px;
-      cursor:pointer; font-weight:600; transition:all .3s ease; font-size:13px;
-    }
-    .gender-btn:hover{ border-color:var(--primary); background:rgba(99,102,241,.1); }
-    .gender-btn.active{
-      background:linear-gradient(135deg,var(--primary),var(--secondary));
-      border-color:transparent; color:#fff;
-    }
-
-    .tabs{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
-    .tab-btn{
-      padding:10px; background:rgba(99,102,241,.1); border:1px solid var(--border);
-      border-radius:8px; color:#cbd5e1; cursor:pointer; font-weight:600; font-size:11px;
-      transition:all .2s ease;
-    }
-    .tab-btn:hover{ background:rgba(99,102,241,.2); }
-    .tab-btn.active{
-      background:linear-gradient(135deg,var(--primary),var(--secondary));
-      border-color:transparent; color:#fff;
-    }
-
-    .options-container{
-      display:grid; grid-template-columns:repeat(2,1fr); gap:8px;
-      max-height:180px; overflow-y:auto; padding:10px;
-      background:rgba(15,23,42,.5); border-radius:8px; border:1px solid var(--border);
-    }
-    .options-container::-webkit-scrollbar{ width:6px; }
-    .options-container::-webkit-scrollbar-track{ background:rgba(30,41,59,.5); border-radius:3px; }
-    .options-container::-webkit-scrollbar-thumb{ background:var(--primary); border-radius:3px; }
-
-    .option-item{
-      padding:10px; background:rgba(99,102,241,.05); border:1px solid var(--border);
-      border-radius:6px; cursor:pointer; font-size:12px; transition:all .2s ease;
-      user-select:none; text-align:center;
-    }
-    .option-item:hover{ background:rgba(99,102,241,.15); border-color:var(--primary); }
-    .option-item.selected{
-      background:linear-gradient(135deg,var(--primary),var(--secondary));
-      border-color:transparent; color:#fff;
-    }
-
-    .button-group{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
-    .btn{
-      padding:12px; border:none; border-radius:10px; font-weight:700; cursor:pointer;
-      font-size:12px; transition:all .3s ease; text-transform:uppercase; letter-spacing:.5px;
-      position:relative; overflow:hidden;
-    }
-    .btn::before{
-      content:''; position:absolute; top:0; left:-100%; width:100%; height:100%;
-      background:rgba(255,255,255,.2); transition:left .3s ease;
-    }
-    .btn:hover::before{ left:100%; }
-    .btn-primary{ background:linear-gradient(135deg,var(--primary),var(--secondary)); color:#fff; }
-    .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 10px 25px rgba(99,102,241,.3); }
-    .btn-secondary{ background:rgba(99,102,241,.2); color:var(--primary); border:1px solid var(--primary); }
-    .btn-secondary:hover{ background:rgba(99,102,241,.3); }
-
-    .preview-panel{
-      width:50%; display:flex; flex-direction:column;
-      background:linear-gradient(135deg, rgba(15,23,42,.5) 0%, rgba(30,41,59,.3) 100%);
-    }
-    .preview-header{
-      padding:30px; border-bottom:1px solid var(--border);
-      background:linear-gradient(135deg, rgba(99,102,241,.1) 0%, rgba(168,85,247,.1) 100%);
-    }
-    .preview-header h2{ font-size:24px; font-weight:700; margin-bottom:5px; }
-    .preview-header p{ font-size:12px; color:#cbd5e1; }
-    .preview-content{ flex:1; overflow-y:auto; padding:20px; }
-    .preview-content::-webkit-scrollbar{ width:8px; }
-    .preview-content::-webkit-scrollbar-track{ background:rgba(30,41,59,.5); }
-    .preview-content::-webkit-scrollbar-thumb{
-      background:linear-gradient(135deg,var(--primary),var(--secondary)); border-radius:4px;
-    }
-
-    .json-output{
-      background:rgba(0,0,0,.5); border:1px solid var(--border);
-      border-radius:12px; padding:16px; font-family:'Courier New',monospace;
-      font-size:11px; color:#4ade80; overflow:auto; min-height:300px;
-      line-height:1.5; white-space:pre-wrap; word-break:break-word;
-    }
-
-    .loader{
-      display:none; width:40px; height:40px;
-      border:4px solid rgba(99,102,241,.2);
-      border-top:4px solid var(--primary);
-      border-radius:50%; animation:spin 1s linear infinite; margin:20px auto;
-    }
-    .loader.active{ display:block; }
-    @keyframes spin{ 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
-
-    .message{
-      padding:12px; border-radius:8px; margin-bottom:15px; display:none; font-size:12px;
-      animation:slideDown .3s ease;
-    }
-    .message.show{ display:block; }
-    .success-message{ background:rgba(74,222,128,.1); border:1px solid #4ade80; color:#4ade80; }
-    .error-message{ background:rgba(239,68,68,.1); border:1px solid #ef4444; color:#ef4444; }
-    @keyframes slideDown{ from{opacity:0; transform:translateY(-10px)} to{opacity:1; transform:translateY(0)} }
-
-    .copy-btn{
-      width:100%; margin-top:15px; padding:12px;
-      background:rgba(74,222,128,.1); border:1px solid #4ade80; color:#4ade80;
-      border-radius:8px; cursor:pointer; font-weight:600; transition:all .3s ease; display:none;
-    }
-    .copy-btn:hover{ background:rgba(74,222,128,.2); }
-    .copy-btn.show{ display:block; }
-    .copy-btn.copied{ background:#4ade80; color:#000; }
-
-    .selected-badges{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
-    .badge{
-      background:rgba(99,102,241,.2); border:1px solid var(--primary); color:#6366f1;
-      padding:6px 10px; border-radius:20px; font-size:11px; display:flex; align-items:center; gap:6px;
-    }
-    .badge .remove{ cursor:pointer; font-weight:bold; margin-left:4px; }
-    .badge .remove:hover{ color:#ef4444; }
-
-    @media (max-width:1200px){
-      .main-container{ flex-direction:column; }
-      .sidebar{ width:100%; height:50vh; border-right:none; border-bottom:1px solid var(--border); }
-      .preview-panel{ width:100%; height:50vh; }
-      .options-container{ grid-template-columns:repeat(3,1fr); }
-    }
-    @media (max-width:768px){
-      .sidebar-header,.preview-header{ padding:20px; }
-      .sidebar-header h1{ font-size:20px; }
-      .preview-header h2{ font-size:18px; }
-      .options-container{ grid-template-columns:1fr; }
-      .gender-selector{ grid-template-columns:1fr; }
-      .button-group{ grid-template-columns:1fr; }
-      .tabs{ grid-template-columns:1fr; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Product Review Prompt Generator - สร้าง Prompt รีวิวสินค้า TikTok ระดับโลก</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f8fafc 100%); }
+        .glass { backdrop-filter: blur(10px); background: rgba(255,255,255,0.8); }
+        .gradient-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+    </style>
 </head>
-<body>
-  <div class="main-container">
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <h1>✨ PromptPro</h1>
-        <p>TikTok Product Review Generator</p>
-      </div>
+<body class="min-h-screen py-12 px-4 sm:px-6 lg:px-8 font-sans antialiased">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent mb-4">
+                TikTok Review Prompt Generator
+            </h1>
+            <p class="text-xl text-gray-700 max-w-2xl mx-auto">ครีเอเตอร์ระดับโลก สร้าง Prompt JSON สำหรับวิดีโอรีวิวสินค้า TikTok อัตโนมัติ 9:16 | 24 วินาที | 3 ฉากไหลลื่น High-End Cinematic</p>
+        </div>
 
-      <div class="sidebar-content">
-        <div class="message success-message" id="successMsg">✓ สร้าง Prompt สำเร็จ!</div>
-        <div class="message error-message" id="errorMsg"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Form Section -->
+            <div class="space-y-6">
+                <!-- Product Name -->
+                <div class="glass p-6 rounded-2xl shadow-2xl border border-white/50">
+                    <label class="block text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-tag mr-3 text-blue-500"></i>1. ชื่อสินค้า
+                    </label>
+                    <input type="text" id="productName" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 text-lg" placeholder="เช่น: เครื่องปิ้งขนมปังไร้กังวล">
+                </div>
 
-        <div class="form-section">
-          <h3 class="section-title">📝 ข้อมูลสินค้า</h3>
-          <div class="form-group">
-            <label>ชื่อสินค้า *</label>
-            <input type="text" id="productName" placeholder="เช่น รองเท้าผ้าใบ Air Jordan" />
-          </div>
-          <div class="form-group">
-            <label>รายละเอียดสินค้า *</label>
-            <textarea id="productDetails" placeholder="อธิบายรายละเอียด ลักษณะ คุณสมบัติ ประโยชน์..."></textarea>
-          </div>
-          <div class="form-group">
-            <label>รูปสินค้า</label>
-            <input type="file" id="productImage" accept="image/*" />
-            <div class="image-preview" id="imagePreview">
-              <img id="previewImg" src="" alt="Product" />
+                <!-- Product Details -->
+                <div class="glass p-6 rounded-2xl shadow-2xl border border-white/50">
+                    <label class="block text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-info-circle mr-3 text-blue-500"></i>2. รายละเอียดสินค้า (คั่นด้วย comma สำหรับจุดเด่นหลายอย่าง)
+                    </label>
+                    <textarea id="productDetails" rows="4" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 text-lg" placeholder="เช่น: ปิ้งกรอบนอกนุ่มใน, ระบบตัดไฟอัตโนมัติ, ดีไซน์สวยหรู, ใช้งานง่าย"></textarea>
+                </div>
+
+                <!-- Model Gender -->
+                <div class="glass p-6 rounded-2xl shadow-2xl border border-white/50">
+                    <label class="block text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-user mr-3 text-blue-500"></i>3. Model รีวิวสินค้า (เพศ + เสียงชัดเจน phonetic-ready)
+                    </label>
+                    <select id="modelGender" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 text-lg">
+                        <option value="">เลือกเพศ Model</option>
+                        <option value="male">เพศชาย (帅哥หนุ่มไทยหล่อสมัยใหม่ เสียงทุ้มชัดเจน ไม่ผิดเพี้ยน)</option>
+                        <option value="female">เพศหญิง (สาวไทยสวยหวานสมัยใหม่ เสียงใสชัดเจน ไม่ผิดเพี้ยน)</option>
+                    </select>
+                </div>
+
+                <!-- Tone -->
+                <div class="glass p-6 rounded-2xl shadow-2xl border border-white/50">
+                    <label class="block text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-magic mr-3 text-blue-500"></i>4. โทนคลิป (เลือก 1 จาก 50)
+                    </label>
+                    <select id="clipTone" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 text-lg">
+                        <option value="">เลือกโทน</option>
+                    </select>
+                </div>
+
+                <!-- Target Audience -->
+                <div class="glass p-6 rounded-2xl shadow-2xl border border-white/50">
+                    <label class="block text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-users mr-3 text-blue-500"></i>5. กลุ่มเป้าหมาย (เลือก 1 จาก 50)
+                    </label>
+                    <select id="targetAudience" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 text-lg">
+                        <option value="">เลือกกลุ่ม</option>
+                    </select>
+                </div>
+
+                <!-- Voice Style -->
+                <div class="glass p-6 rounded-2xl shadow-2xl border border-white/50">
+                    <label class="block text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-volume-up mr-3 text-blue-500"></i>6. สไตล์เสียง Model (เลือก 1 จาก 50)
+                    </label>
+                    <select id="voiceStyle" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 text-lg">
+                        <option value="">เลือกสไตล์เสียง</option>
+                    </select>
+                </div>
+
+                <!-- Generate Button -->
+                <div class="glass p-8 rounded-2xl shadow-2xl border border-white/50 text-center">
+                    <button id="generateBtn" class="gradient-btn text-white px-12 py-6 rounded-2xl text-xl font-bold shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 w-full">
+                        <i class="fas fa-rocket mr-3"></i>Generate JSON Prompt (7. ฉากต่อเนื่องไหลลื่นมืออาชีพระดับโลก)
+                    </button>
+                </div>
             </div>
-          </div>
-        </div>
 
-        <div class="form-section">
-          <h3 class="section-title">🎤 Model เสียงพูด *</h3>
-          <div class="gender-selector">
-            <button class="gender-btn" data-gender="male">👨 เพศชาย</button>
-            <button class="gender-btn" data-gender="female">👩 เพศหญิง</button>
-          </div>
+            <!-- Output Section -->
+            <div>
+                <div class="glass p-6 rounded-2xl shadow-2xl border border-white/50 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-code mr-3 text-green-500"></i>JSON Prompt พร้อมใช้งาน
+                    </h2>
+                    <div id="status" class="text-sm text-gray-600 mb-4">กรอกข้อมูลแล้วกด Generate เพื่อสร้าง Prompt</div>
+                </div>
+                <div id="output" class="glass p-6 rounded-2xl shadow-2xl border border-white/50 max-h-96 overflow-auto hidden">
+                    <pre id="jsonOutput" class="text-sm bg-gray-50 p-4 rounded-xl font-mono text-gray-900 whitespace-pre-wrap"></pre>
+                    <div class="mt-4 flex gap-4">
+                        <button id="copyBtn" class="flex-1 bg-green-500 text-white py-2 px-4 rounded-xl hover:bg-green-600 transition">
+                            <i class="fas fa-copy mr-2"></i>Copy JSON
+                        </button>
+                        <a id="downloadBtn" class="flex-1 bg-blue-500 text-white py-2 px-4 rounded-xl hover:bg-blue-600 transition text-center">
+                            <i class="fas fa-download mr-2"></i>Download
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div class="form-section">
-          <h3 class="section-title">🎨 โทนคลิป</h3>
-          <div class="tabs" id="toneTabs">
-            <button class="tab-btn active" data-filter="all">ทั้งหมด</button>
-            <button class="tab-btn" data-filter="popular">ยอดนิยม</button>
-            <button class="tab-btn" data-filter="custom">อื่นๆ</button>
-          </div>
-          <div class="options-container" id="toneContainer"></div>
-          <div class="selected-badges" id="toneBadges"></div>
-        </div>
-
-        <div class="form-section">
-          <h3 class="section-title">👥 กลุ่มเป้าหมาย</h3>
-          <div class="options-container" id="targetContainer"></div>
-          <div class="selected-badges" id="targetBadges"></div>
-        </div>
-
-        <div class="form-section">
-          <h3 class="section-title">🎵 สไตล์เสียง</h3>
-          <div class="options-container" id="voiceContainer"></div>
-          <div class="selected-badges" id="voiceBadges"></div>
-        </div>
-
-        <div class="button-group">
-          <button class="btn btn-primary" id="generateBtn">⚡ สร้าง Prompt</button>
-          <button class="btn btn-secondary" id="resetBtn">🔄 รีเซ็ต</button>
-        </div>
-      </div>
     </div>
 
-    <div class="preview-panel">
-      <div class="preview-header">
-        <h2>📊 JSON Output</h2>
-        <p>ผลลัพธ์ Prompt สำหรับสร้างวิดีโอ</p>
-      </div>
-      <div class="preview-content">
-        <div class="loader" id="loader"></div>
-        <div class="json-output" id="jsonOutput">{
-  "status": "waiting",
-  "message": "กรุณากรอกข้อมูลสินค้าและคลิก 'สร้าง Prompt'"
-}</div>
-        <button class="copy-btn" id="copyBtn">📋 คัดลอก JSON</button>
-      </div>
-    </div>
-  </div>
+    <script>
+        // 50 Clip Tones
+        const clipTones = [
+            'สนุกสนาน ร่าเริง', 'ตื่นเต้น เร้าใจ', 'ผ่อนคลาย สบายๆ', 'หรูหรา พรีเมี่ยม', 'ผจญภัย มันส์', 'โรแมนติก อ่อนหวาน',
+            'ตลกขบขัน', 'จริงจัง มืออาชีพ', 'สร้างแรงบันดาลใจ', 'ลึกลับ น่าค้นหา', 'สดชื่น ร่าเริง', 'อบอุ่น เป็นกันเอง',
+            'พลังบวก', 'เซ็กซี่ ลึกลับ', 'สปอร์ต กระฉับกระเฉง', 'น่ารัก สดใส', 'มั่นใจ เข้มแข็ง', 'ชิลล์ ชายหาด',
+            'ไฮเทค ทันสมัย', 'วินเทจ คลาสสิก', 'ปาร์ตี้ สุดเหวี่ยง', 'สุขภาพดี แข็งแรง', 'ครอบครัว อบอุ่น',
+            'แฟชั่น สไตล์', 'เกมมิ่ง มันส์', 'อาหาร อร่อยล้ำ', 'ความงาม สวยเป๊ะ', 'เทคโนโลยี สุดล้ำ',
+            'การเดินทาง ท่องเที่ยว', 'กีฬา ไฟแรง', 'เพลง ดนตรี', 'ศิลปะ สร้างสรรค์', 'ธุรกิจ สำเร็จ',
+            'เรียนรู้ เก่งขึ้น', 'รักสัตว์ น่ารัก', 'รถยนต์ สปอร์ต', 'บ้าน สวยงาม', 'เด็ก วัยรุ่น',
+            'ผู้ใหญ่ วัยทำงาน', 'ผู้สูงอายุ สุขภาพ', 'อาหารสุขภาพ', 'เครื่องสำอาง', 'เสื้อผ้าแฟชั่น',
+            ' gadget สนุก', 'ของใช้ในบ้าน', 'กีฬาทางน้ำ', 'เต้นรำ สนุก', 'คอนเสิร์ต สุดมันส์'
+        ];
 
-  <script>
-    // Data (เมนูอื่นไม่แก้ไข)
-    const toneOptions = [
-      { name: 'มินิมัล & เรียบหรู', category: 'popular' },
-      { name: 'ช็อปปิ้งไลฟ์สไตล์', category: 'popular' },
-      { name: 'รีวิวความจริง', category: 'popular' },
-      { name: 'มันส์และตื่นเต้น', category: 'popular' },
-      { name: 'สดใจ & เซอร์ไพรส์', category: 'popular' },
-      { name: 'หรูหราและมั่งคั่ง', category: 'popular' },
-      { name: 'ยุวเรียวและเทรนด์', category: 'popular' },
-      { name: 'ภูมิใจและประเมินค่า', category: 'popular' },
-      { name: 'ลึกลับ & หลงไหล', category: 'popular' },
-      { name: 'สนุกสนาน & ตลกขบขัน', category: 'popular' },
-      { name: 'สโตรี่บอร์ด & ดราม่า', category: 'custom' },
-      { name: 'วิทยาศาสตร์ & ข้อเท็จจริง', category: 'custom' },
-      { name: 'อารมณ์และความรู้สึก', category: 'custom' },
-      { name: 'ตัวอักษรกำลังดำเนินการ', category: 'custom' },
-      { name: 'เยาวชนวัฒนาการ', category: 'custom' },
-      { name: 'ความเป็นบุคคล & ลักษณะนิสัย', category: 'custom' },
-      { name: 'ความคิดริเริ่มและจินตนาการ', category: 'custom' },
-      { name: 'สายลับและลึกลับ', category: 'custom' },
-      { name: 'ท้าทายและบทเรียน', category: 'custom' },
-      { name: 'ความหมายและสัญลักษณ์', category: 'custom' }
-    ];
+        // 50 Target Audiences
+        const targetAudiences = [
+            'วัยรุ่นผู้หญิง', 'ชายหนุ่มนักกีฬา', 'แม่บ้านวัยกลางคน', 'พนักงานออฟฟิศ', 'นักเรียนนักศึกษา',
+            'คุณแม่มือใหม่', 'ผู้ชายวัยทำงาน', 'สาวออฟฟิศ', 'นักเดินทาง', 'คนรักสุขภาพ',
+            'เกมเมอร์หนุ่ม', 'แฟชั่นนิสต้า', 'เชฟมือสมัครเล่น', 'นักฟิตเนส', 'ผู้สูงอายุ',
+            'เด็กเล็กครอบครัว', 'บล็อกเกอร์', 'นักธุรกิจ', 'คนรักสัตว์เลี้ยง', 'สาวมหาลัย',
+            'หนุ่มนักดนตรี', 'ครูอาจารย์', 'พ่อบ้าน', 'คนรักรถ', 'นักช้อปปิ้ง', 'วัยรุ่นชาย',
+            'สาวใหญ่', 'หนุ่มโรงงาน', 'คนรักหนัง', 'นักกอล์ฟ', 'คนรักทะเล', 'นักเต้น',
+            'คนรักอาหารไทย', 'สาวผมสั้น', 'หนุ่มผมยาว', 'ครอบครัวใหญ่', 'คนโสด', 'คู่รัก',
+            'นักวิ่ง', 'คนรักเทคโนโลยี', 'แม่ลูกอ่อน', 'พ่อลูกชาย', 'สาวนักธุรกิจ',
+            'หนุ่มไอที', 'คนรักธรรมชาติ', 'นักถ่ายรูป', 'คนรักหนังสือ', 'สาวเกาหลีสไตล์',
+            'หนุ่มสไตล์ฮิปสเตอร์', 'กลุ่มเพื่อนปาร์ตี้'
+        ];
 
-    const targetOptions = [
-      'สตรี 18-25 ปี','สตรี 25-35 ปี','สตรี 35-45 ปี',
-      'ชาย 18-25 ปี','ชาย 25-35 ปี','ชาย 35-45 ปี',
-      'มิลเลนเนียล','เจน Z','ผู้ประกอบการ','นักเรียน',
-      'ครอบครัวหนุ่มสาว','ผู้รักสุขภาพ','ผู้รักแฟชั่น',
-      'นักกีฬา','ผู้ใช้เทคโนโลยี','ผู้รักการเดินทาง',
-      'ผู้รักการกิน','ผู้รักศิลปะ','ผู้รักเกม',
-      'ผู้รักการฟอร์มแฟชั่น','ผู้รักความสะอาด',
-      'ผู้รักการดูแลผิว','ผู้รักบ้าน','ผู้รักสัตว์',
-      'ผู้รักการท่องเที่ยว','ผู้รักการถ่ายภาพ',
-      'ผู้รักการแต่งหน้า','ผู้เลี้ยงลูก','นักลงทุน',
-      'ผู้รักอาหารเสริม','ผู้รักการออกกำลัง','ผู้รักดนตรี',
-      'นักสะสม','ผู้หลงใหล','ผู้เชี่ยวชาญเทคโนโลยี',
-      'ผู้ชื่นชอบการแสดง','นักจิตรกรรม','นักเขียน',
-      'บล็อกเกอร์อาหาร','นักออกแบบภายใน','ผู้หรวดหรวม',
-      'นักแสดง','เด็กทีนเอจ','ผู้สูงอายุ'
-    ];
+        // 50 Voice Styles
+        const voiceStyles = [
+            'กระตือรือร้น สดใส', 'นุ่มนวล อ่อนโยน', 'เข้มแข็ง มั่นใจ', 'ร่าเริง ขี้เล่น', 'จริงจัง มือโปร',
+            'อบอุ่น เป็นมิตร', 'เซ็กซี่ ลึกลับ', 'สนุกสนาน หัวเราะ', 'สร้างแรงบันดาลใจ', 'ผ่อนคลาย ชิลล์',
+            'พลังเต็มเปี่ยม', 'น่ารัก หวานใส', 'ทุ้มต่ำ เท่ๆ', 'สูงใส สดชื่น', 'ขบขัน ตลก',
+            'หรูหรา พรีเมี่ยม', 'ผจญภัย มันส์', 'โรแมนติก หวานซึ้ง', 'สปอร์ต ไฟแรง', 'ไฮเทค สมัยใหม่',
+            'วินเทจ คลาสสิก', 'ปาร์ตี้ สุดเหวี่ยง', 'สุขภาพดี แข็งแรง', 'ครอบครัว อบอุ่น', 'แฟชั่น สไตล์',
+            'เกมมิ่ง มันส์หยด', 'อาหาร อร่อยล้ำ', 'ความงาม สวยเป๊ะ', 'เทคโนโลยี ล้ำๆ', 'ท่องเที่ยว สนุก',
+            'กีฬา พลังบวก', 'เพลง ดนตรีไพเราะ', 'ศิลปะ สร้างสรรค์', 'ธุรกิจ สำเร็จสูง', 'เรียนรู้ ชัดเจน',
+            'สัตว์เลี้ยง น่ารัก', 'รถยนต์ สปิด', 'บ้าน สวยงาม', 'วัยรุ่น สดใส', 'วัยทำงาน มั่นคง',
+            'สุขภาพ วัยชรา', 'อาหารสุขภาพ สดชื่น', 'เครื่องสำอาง หวาน', 'เสื้อผ้า แฟชั่น', 'gadget สนุก',
+            'ของใช้บ้าน ใช้งานง่าย', 'กีฬาทางน้ำ สนุก', 'เต้นรำ ร่าเริง', 'คอนเสิร์ต มันส์', 'ธรรมชาติ สงบ'
+        ];
 
-    const voiceOptions = [
-      'อ่อนโยน & เสน่ห์','กล้าหาญ & พลัง','สนุกสนาน & มีชีวิตชีวา',
-      'ปิติยินดี & สดใจ','ลึกลับ & มีเสน่ห์','เป็นกลาง & มืออาชีพ',
-      'อบอุ่น & ใจดี','ตื่นตัว & ตื่นเต้น','ขี้เล่น & ตลกขบขัน',
-      'สงบ & นิ่ม','เหล่าแล้ว & ลำเมิดลำลังใจ','มั่นใจ & กล้าหาญ',
-      'อิสระ & ไม่มีข้อจำกัด','พิเศษ & หรู','ไร้กังวล & ผ่อนคลาย',
-      'เตือน & สำคัญ','หลอมและดึงดูด','นวม & ไม่สุ่ม',
-      'ยิ่งใหญ่ & เป่า','คำนิยม & เคารพ','มีพลัง & ระหำระเหริม',
-      'เพ่น & ระมัดระวัง','ขี้เล่น & เป็นเด็ก','ผู้บญชาการ & หัวหน้า',
-      'กำลังใจ & ส่งเสริม','เสียงสไตล์ K-pop','เสียงสไตล์อนิเมะ',
-      'เสียงสไตล์ ASMR','เสียงตัวละครอนิเมะ','เสียงเนื้อสัญญา',
-      'เสียงแบบตลกและปาร์ตี้','เสียงตัวละครหญิงเป็นเด็ก',
-      'เสียงตัวละครหญิงสูงอายุ','เสียงตัวละครชายเป็นเด็ก',
-      'เสียงตัวละครชายสูงอายุ','เสียงตัวละครชายตัวเล็ก',
-      'เสียงตัวละครหญิงตัวเล็ก','เสียงตัวละครชายตัวใหญ่',
-      'เสียงตัวละครหญิงตัวใหญ่','เสียงสไตล์ซีรี่ย์นักสืบ',
-      'เสียงสไตล์สารคดี','เสียงสไตล์โปรแกรม','เสียงสไตล์เพลง',
-      'เสียงสไตล์โฆษณา','เสียงสไตล์ข่าว','เสียงสไตล์การบรรยาย',
-      'เสียงสไตล์ทำให้ฉันเข่นฟัง','เสียงสไตล์การแสดง','เสียงสไตล์การกล่าว'
-    ];
+        // Populate selects
+        const toneSelect = document.getElementById('clipTone');
+        const targetSelect = document.getElementById('targetAudience');
+        const voiceSelect = document.getElementById('voiceStyle');
 
-    // ✅ เสียงพูด + แอคชั่น "จึ้ง" + จบคลิปแบบขายของ (ปรับให้สมบูรณ์)
-    const maleScripts = {
-      scene1: [
-        { dialogue:"หยุดก่อน…ดูนี่ ${productName} ผมเพิ่งแกะกล่องเมื่อกี้เอง ของจริงมันดูแพงกว่าที่คิด",
-          actions:[
-            "ยกสินค้าเข้ากล้องแบบเร็ว แล้วค้าง 0.3 วิให้คนสะดุด",
-            "หมุนให้แสงเล่นกับพื้นผิว (มือจับแน่น ไม่ทะลุสินค้า)",
-            "มองกล้องแล้วยิ้มมุมปาก เหมือนจะบอกความลับ"
-          ]},
-        { dialogue:"ขอ 3 วิ…${productName} ตัวนี้คือ ‘เห็นปุ๊บอยากได้ปั๊บ’ จริงๆ",
-          actions:[
-            "คัทเปิดเป็นไวด์ช็อต แล้วดึงเข้า close-up จุดเด่นทันที",
-            "ชี้จุดเด่น 1 จุดแบบชัดๆ",
-            "พยักหน้าเบาๆ เหมือนยืนยัน"
-          ]},
-        { dialogue:"ผมไม่ค่อยอวยนะ แต่ ${productName} นี่ทำให้ผมหยุดดูตัวเองในกระจกเลย",
-          actions:[
-            "ถือสินค้าให้เฟรมเต็ม แล้วเอียงนิดๆ ให้ดูมีมิติ",
-            "ทำท่าหัวเราะเบาๆ แบบธรรมชาติ",
-            "คัทไปฮีโร่ช็อตสินค้า 0.5 วิ"
-          ]}
-      ],
-      scene2: [
-        { dialogue:"ดูดีเทลตรงนี้…${productName} งานมันเนี๊ยบมาก แล้วเวลาลองใช้คือมันลื่นมือ/เข้ามือสุดๆ",
-          actions:[
-            "ซูม close-up ดีเทล 2-3 จุดแบบคัทไว (0.5 วิ/ช็อต)",
-            "สาธิตใช้งานจริง 1 จังหวะให้เห็นผล",
-            "หันกลับมามองกล้องแบบ ‘เห็นปะ’"
-          ]},
-        { dialogue:"ชอบตรงที่มันใช้ง่าย ไม่ต้องปรับอะไรเยอะ แล้วฟีลมันเหมือนของเกรดโปร",
-          actions:[
-            "สลับมุม POV เหมือนคนดูเป็นคนถืออยู่",
-            "ทำท่าลองใช้ต่อเนื่อง 1 รอบแบบสมูท",
-            "ยกนิ้วโป้งขึ้นแบบเร็วๆ"
-          ]},
-        { dialogue:"พูดแบบคนใช้จริงนะ…${productName} คือคุ้ม เพราะมันให้ผล/ฟีลที่เกินราคา",
-          actions:[
-            "ยกสินค้าใกล้หน้า แล้วพูดช้าๆ ตรงคำว่า ‘คุ้ม’",
-            "คัทไปช็อตจับถือแบบสวยๆ",
-            "พยักหน้า 1 ครั้งแบบหนักแน่น"
-          ]}
-      ],
-      scene3: [
-        { dialogue:"สรุปเลย…ถ้าคุณอยากได้ของที่ ‘จึ้ง’ และใช้ได้จริง ${productName} เอาอยู่ จบในตัวเดียว",
-          actions:[
-            "ถือสินค้ากลางเฟรม แสงสวยๆ แล้วค้าง 1 วิ",
-            "กวักมือเบาๆ เหมือนชวนให้ลอง",
-            "จบด้วยฮีโร่ช็อตสินค้าใกล้ๆ"
-          ]},
-        { dialogue:"ถ้าลังเลอยู่…ผมบอกแค่ว่า ลองครั้งเดียวแล้วจะเข้าใจ ${productName} มันดีจริง",
-          actions:[
-            "สบตากล้องนิ่ง 1 วิ ให้ความน่าเชื่อ",
-            "ยื่นสินค้าเข้ากล้องนิดๆ แบบพอดี",
-            "ยิ้มปิดท้ายแบบมั่นใจ"
-          ]},
-        { dialogue:"เอาแบบชัดๆ…${productName} ตัวนี้ผมให้ผ่านแบบไม่ต้องคิดเยอะ ใครอยากได้ตัวเดียวจบ—จัดเลย",
-          actions:[
-            "ชี้ที่สินค้า แล้วพยักหน้า 1 ครั้ง",
-            "นิ้วโป้งขึ้นปิดท้าย",
-            "คัทจบที่สินค้าเด่น (ไม่มีคำลา)"
-          ]}
-      ]
-    };
-
-    const femaleScripts = {
-      scene1: [
-        { dialogue:"หยุดดูแป๊บ…${productName} นี่สวยแบบตาแตก แล้วมันดูแพงมากกว่าที่คิดจริงๆ",
-          actions:[
-            "ยกสินค้าเข้ากล้องเร็วๆ แล้วหยุดนิ่งให้คนสะดุด",
-            "หันซ้าย-ขวาให้แสงเล่นกับพื้นผิว",
-            "ยิ้มแบบ ‘เจอของดี’ แล้วมองกล้อง"
-          ]},
-        { dialogue:"โอเค…${productName} ตัวนี้คือของที่หยิบปุ๊บ ‘รู้สึกดี’ ตั้งแต่จับเลยค่ะ",
-          actions:[
-            "แตะวัสดุเบาๆ ให้มีเสียงสัมผัสชัด (foley)",
-            "หมุนโชว์รอบๆ แบบนุ่มๆ",
-            "พยักหน้าเบาๆ แบบจริงใจ"
-          ]},
-        { dialogue:"ใครเลื่อนผ่านคือพลาด…${productName} มันน่าใช้มาก จนต้องหยิบมารีวิวเดี๋ยวนี้เลย",
-          actions:[
-            "ชี้ไปที่สินค้า แล้วทำหน้าจริงจังนิดๆ เหมือนเตือนเพื่อน",
-            "คัท close-up จุดเด่น 1 จุด",
-            "ยิ้มเล็กๆ ปิดจังหวะ"
-          ]}
-      ],
-      scene2: [
-        { dialogue:"มาดูดีเทลนะ…${productName} งานละเอียดกว่าที่คิด แล้วใช้งานก็ง่ายมาก",
-          actions:[
-            "ซูม close-up ดีเทล 2-3 จุดแบบคัทไว",
-            "ลองสวมใส่/ถือใช้งานจริง 1 จังหวะ",
-            "หันกลับมามองกล้องแบบ ‘เห็นมั้ย’"
-          ]},
-        { dialogue:"ชอบตรงที่มันเข้ากับชีวิตประจำวัน คือใช้ได้จริง ไม่ต้องพยายามเยอะ แต่ดูดีขึ้นทันที",
-          actions:[
-            "ทำท่าใช้งานแบบ everyday 1 รอบ",
-            "สลับมุม POV เหมือนคนดูลองเอง",
-            "ยิ้มแบบพอใจ แล้วพยักหน้า 1 ครั้ง"
-          ]},
-        { dialogue:"พูดตรงๆ เลยนะ…${productName} คุ้มมาก แล้วฟีลมันคือของดีที่ควรมีติดไว้",
-          actions:[
-            "ยกสินค้าเทียบกับตัวเองให้เห็นความเข้ากัน",
-            "ทำท่า ‘ว้าว’ เบาๆ แบบธรรมชาติ",
-            "คัทไปช็อตสินค้าเด่นกลางเฟรม"
-          ]}
-      ],
-      scene3: [
-        { dialogue:"สรุปค่ะ…${productName} คือไอเท็มที่ควรมี ถ้าอยากได้ของดีที่ดูแพงและใช้ได้จริง",
-          actions:[
-            "ถือสินค้าในแสงสวยๆ แล้วค้างให้ดูเต็มๆ",
-            "กวักมือเบาๆ เหมือนชวนเพื่อนมาลอง",
-            "จบด้วยฮีโร่ช็อตสินค้า"
-          ]},
-        { dialogue:"ถ้าลังเลอยู่…ลองแล้วจะเข้าใจ ${productName} มันดีจริง แบบไม่ต้องพูดเยอะเลยค่ะ",
-          actions:[
-            "สบตากล้องนิ่งๆ 1 วิ แบบมั่นใจ",
-            "ยื่นสินค้าเข้าหากล้องนิดๆ ให้เด่น",
-            "ยิ้มปิดท้ายแบบมั่นใจ"
-          ]},
-        { dialogue:"เอาแบบจึ้งๆ ตัวเดียวจบ…จัด ${productName} เลยค่ะ ของมันดีจริง ไม่ผิดหวังแน่นอน",
-          actions:[
-            "ชี้สินค้า + นิ้วโป้งขึ้นแบบเร็วๆ",
-            "พยักหน้า 1 ครั้งแบบชัด",
-            "จบที่สินค้าเด่น (ไม่มีคำลา)"
-          ]}
-      ]
-    };
-
-    let state = {
-      productName: '',
-      productDetails: '',
-      selectedGender: null,
-      selectedTones: [],
-      selectedTargets: [],
-      selectedVoices: [],
-      currentFilter: 'all'
-    };
-
-    const elements = {
-      productName: document.getElementById('productName'),
-      productDetails: document.getElementById('productDetails'),
-      productImage: document.getElementById('productImage'),
-      imagePreview: document.getElementById('imagePreview'),
-      previewImg: document.getElementById('previewImg'),
-      generateBtn: document.getElementById('generateBtn'),
-      resetBtn: document.getElementById('resetBtn'),
-      jsonOutput: document.getElementById('jsonOutput'),
-      copyBtn: document.getElementById('copyBtn'),
-      loader: document.getElementById('loader'),
-      successMsg: document.getElementById('successMsg'),
-      errorMsg: document.getElementById('errorMsg'),
-      toneContainer: document.getElementById('toneContainer'),
-      targetContainer: document.getElementById('targetContainer'),
-      voiceContainer: document.getElementById('voiceContainer'),
-      toneTabs: document.getElementById('toneTabs'),
-      toneBadges: document.getElementById('toneBadges'),
-      targetBadges: document.getElementById('targetBadges'),
-      voiceBadges: document.getElementById('voiceBadges')
-    };
-
-    function init(){
-      renderOptions();
-      setupEventListeners();
-    }
-
-    function renderOptions(){
-      elements.toneContainer.innerHTML = toneOptions.map((tone, idx) =>
-        `<div class="option-item" data-type="tone" data-idx="${idx}">${tone.name}</div>`
-      ).join('');
-
-      elements.targetContainer.innerHTML = targetOptions.map((t, idx) =>
-        `<div class="option-item" data-type="target" data-idx="${idx}">${t}</div>`
-      ).join('');
-
-      elements.voiceContainer.innerHTML = voiceOptions.map((v, idx) =>
-        `<div class="option-item" data-type="voice" data-idx="${idx}">${v}</div>`
-      ).join('');
-
-      document.querySelectorAll('.option-item').forEach(item => {
-        item.addEventListener('click', handleOptionClick);
-      });
-    }
-
-    function setupEventListeners(){
-      document.querySelectorAll('.gender-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('active'));
-          e.target.classList.add('active');
-          state.selectedGender = e.target.getAttribute('data-gender');
+        clipTones.forEach(tone => {
+            const opt = document.createElement('option');
+            opt.value = tone;
+            opt.textContent = tone;
+            toneSelect.appendChild(opt);
         });
-      });
 
-      elements.productImage.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files[0]) {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            elements.previewImg.src = event.target.result;
-            elements.imagePreview.classList.add('show');
-          };
-          reader.readAsDataURL(e.target.files[0]);
+        targetAudiences.forEach(target => {
+            const opt = document.createElement('option');
+            opt.value = target;
+            opt.textContent = target;
+            targetSelect.appendChild(opt);
+        });
+
+        voiceStyles.forEach(style => {
+            const opt = document.createElement('option');
+            opt.value = style;
+            opt.textContent = style;
+            voiceSelect.appendChild(opt);
+        });
+
+        // Generate Button
+        document.getElementById('generateBtn').addEventListener('click', generatePrompt);
+
+        function generatePrompt() {
+            const productName = document.getElementById('productName').value.trim();
+            const productDetails = document.getElementById('productDetails').value.trim();
+            const modelGender = document.getElementById('modelGender').value;
+            const clipTone = document.getElementById('clipTone').value;
+            const targetAudience = document.getElementById('targetAudience').value;
+            const voiceStyle = document.getElementById('voiceStyle').value;
+
+            if (!productName || !productDetails || !modelGender || !clipTone || !targetAudience || !voiceStyle) {
+                alert('กรุณากรอกข้อมูลครบทุกช่อง!');
+                return;
+            }
+
+            // Split details into 3 key points for 3 scenes (diverse)
+            const detailsArray = productDetails.split(',').map(d => d.trim()).filter(d => d);
+            const pt1 = detailsArray[0] || 'คุณภาพสูงสุด';
+            const pt2 = detailsArray[1] || 'ใช้งานง่าย';
+            const pt3 = detailsArray[2] || 'คุ้มค่าที่สุด';
+
+            // Model desc
+            let modelDesc = modelGender === 'male' 
+                ? '帅气的年轻泰国男子 25 ปี หล่อสมัยใหม่ ผมดำสั้น รูปร่างฟิต ใส่เสื้อเชิ้ตแขนสั้นกางเกงยีนส์ ท่าทางมั่นใจ' 
+                : 'สวยหวานสาวไทย 23 ปี สวยสดใส ผมยาวดำ ผิวขาว รูปร่างเพรียว ใส่เดรสสั้นแขนกุด ท่าทางร่าเริง';
+
+            // Voice desc
+            const thaiVoice = modelGender === 'male' ? 'ชายไทยทุ้มชัด' : 'หญิงไทยใสชัด';
+            const fullVoice = `${thaiVoice} สไตล์ ${voiceStyle.toLowerCase()} โทน ${clipTone.toLowerCase()}`;
+
+            // Diverse natural Thai scripts (no สวัสดี in scene1, diverse, sales-oriented, match details)
+            const script1 = `ว้าว [productName] นี่สุดยอดเลย! มัน${pt1.toLowerCase()} ทำให้ทุกวันง่ายขึ้นมาก ต้องลอง!`;
+            const script2 = `ดูสิ${pt2.toLowerCase()} ของมัน ใช้งานลื่นปรื๊ด แถมทนทานสุดๆ เหมาะกับ${targetAudience.toLowerCase()}แบบเราเลย`;
+            const script3 = `สรุปนะ [productName] ตัวนี้${pt3.toLowerCase()} คุ้มสุด ซื้อเลยดีกว่า ชีวิตดีขึ้นชัวร์!`;
+
+            // Cinematic scenes: 3 continuous, smooth, product consistent, hold/wear adapt, dynamic angles, high-end, no text, bg sound match product/tone
+            // Assume general hold/wear, adapt via desc
+            const action1 = detailsArray.some(d => d.includes('สวม') || d.includes('ใส่')) ? 'สวมใส่' : 'ถือโชว์';
+            const action2 = action1;
+            const action3 = action1;
+
+            const productConsistent = `${productName} รูปร่างเดิมทุกฉาก ไม่เปลี่ยนแปลง`;
+
+            const scene1Desc = `${modelDesc} ยืนในห้องสตูดิโอ bright natural light High-End cinematic, มุมกล้อง close-up pan ขึ้นจากมือ ${action1} ${productConsistent} มือไม่ทะลุ สินค้านิ่งกริ๊บ ท่าทางตื่นเต้น natural review, smooth dynamic angle เร้าอารมณ์${clipTone}`;
+            const scene2Desc = `${modelDesc} ฉากต่อเนื่อง zoom out medium shot spin 360 ตัวละครเดินช้าๆ interact ${action2} ${productConsistent} ตัวห้ามทะลุ professional lighting filmic bokeh, มุมกล้อง low angle up dynamic match ${targetAudience}`;
+            const scene3Desc = `${modelDesc} transition fade ฉากจบ wide shot smile big hold ${action3} ${productConsistent} epic slow-mo end pose, multi-angle cinematic high-end glow, perfect natural flow`;
+
+            // BG sound: match tone/product
+            const bgSound = clipTone.includes('สนุก') || clipTone.includes('ตื่นเต้น') ? 'upbeat electronic music' : 
+                           clipTone.includes('ผ่อนคลาย') ? 'chill lo-fi' : 
+                           clipTone.includes('หรู') ? 'luxury orchestral' : 'energetic pop soundtrack เข้ากับสินค้า';
+
+            // JSON Prompt
+            const promptJson = {
+                "aspect_ratio": "9:16",
+                "duration_seconds": 24,
+                "total_scenes": 3,
+                "scene_duration": 8,
+                "model": modelDesc,
+                "voice": fullVoice,
+                "tone": clipTone,
+                "target": targetAudience,
+                "product": productName,
+                "scenes": [
+                    {
+                        "scene": 1,
+                        "duration": 8,
+                        "visual_prompt": scene1Desc,
+                        "script": script1.replace('[productName]', productName),
+                        "action": `${action1} สินค้าธรรมชาติ`,
+                        "camera": "close-up dynamic pan, cinematic lighting",
+                        "sound": `${bgSound}, subtle product sfx`,
+                        "notes": "natural review, no text, smooth to next"
+                    },
+                    {
+                        "scene": 2,
+                        "duration": 8,
+                        "visual_prompt": scene2Desc,
+                        "script": script2.replace('[productName]', productName),
+                        "action": `${action2} interact smooth`,
+                        "camera": "medium spin low angle, filmic multi-angle",
+                        "sound": `${bgSound} build up`,
+                        "notes": "consistent product, fluid transition, high-end"
+                    },
+                    {
+                        "scene": 3,
+                        "duration": 8,
+                        "visual_prompt": scene3Desc,
+                        "script": script3.replace('[productName]', productName),
+                        "action": `${action3} epic pose`,
+                        "camera": "wide slow-mo glow, diverse cinematic angles",
+                        "sound": `${bgSound} climax fade out`,
+                        "notes": "powerful CTA natural end, viewer wants to buy, no glitch"
+                    }
+                ],
+                "global_notes": "High-End cinematic throughout, smooth continuous flow 3 scenes, product identical no deformation no clipping, Thai voice perfect pronunciation, diverse angles emotional match product, pro reviewer natural stop-scroll, no text overlays, powerful sales impact"
+            };
+
+            // Display
+            document.getElementById('jsonOutput').textContent = JSON.stringify(promptJson, null, 2);
+            document.getElementById('output').classList.remove('hidden');
+            document.getElementById('status').textContent = '✅ Prompt สร้างสำเร็จ! พร้อมใช้งานกับ AI Video Generator (เช่น Kling, Runway)';
         }
-      });
 
-      document.querySelectorAll('#toneTabs .tab-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          document.querySelectorAll('#toneTabs .tab-btn').forEach(b => b.classList.remove('active'));
-          e.target.classList.add('active');
-          state.currentFilter = e.target.getAttribute('data-filter');
-          filterOptions();
+        // Copy & Download
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const jsonText = document.getElementById('jsonOutput').textContent;
+            navigator.clipboard.writeText(jsonText).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const oldText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+                setTimeout(() => btn.innerHTML = oldText, 2000);
+            });
         });
-      });
 
-      elements.generateBtn.addEventListener('click', generatePrompt);
-      elements.resetBtn.addEventListener('click', resetForm);
-      elements.copyBtn.addEventListener('click', copyToClipboard);
-    }
-
-    function handleOptionClick(e){
-      const type = e.target.getAttribute('data-type');
-      e.target.classList.toggle('selected');
-
-      if (type === 'tone') {
-        state.selectedTones = Array.from(elements.toneContainer.querySelectorAll('.option-item.selected'))
-          .map(el => toneOptions[parseInt(el.getAttribute('data-idx'))].name);
-        updateBadges('tone');
-      } else if (type === 'target') {
-        state.selectedTargets = Array.from(elements.targetContainer.querySelectorAll('.option-item.selected'))
-          .map(el => targetOptions[parseInt(el.getAttribute('data-idx'))]);
-        updateBadges('target');
-      } else if (type === 'voice') {
-        state.selectedVoices = Array.from(elements.voiceContainer.querySelectorAll('.option-item.selected'))
-          .map(el => voiceOptions[parseInt(el.getAttribute('data-idx'))]);
-        updateBadges('voice');
-      }
-    }
-
-    function filterOptions(){
-      const items = elements.toneContainer.querySelectorAll('.option-item');
-      items.forEach(item => {
-        const idx = parseInt(item.getAttribute('data-idx'));
-        const tone = toneOptions[idx];
-        if (state.currentFilter === 'all') item.style.display = 'block';
-        else if (state.currentFilter === 'popular') item.style.display = tone.category === 'popular' ? 'block' : 'none';
-        else if (state.currentFilter === 'custom') item.style.display = tone.category === 'custom' ? 'block' : 'none';
-      });
-    }
-
-    function updateBadges(type){
-      let badgeContainer, items;
-
-      if (type === 'tone') { badgeContainer = elements.toneBadges; items = state.selectedTones; }
-      else if (type === 'target') { badgeContainer = elements.targetBadges; items = state.selectedTargets; }
-      else { badgeContainer = elements.voiceBadges; items = state.selectedVoices; }
-
-      badgeContainer.innerHTML = items.map((item, idx) =>
-        `<div class="badge">${item} <span class="remove" data-idx="${idx}">✕</span></div>`
-      ).join('');
-
-      badgeContainer.querySelectorAll('.remove').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const idx = parseInt(btn.getAttribute('data-idx'));
-          items.splice(idx, 1);
-          if (type === 'tone') state.selectedTones = items;
-          else if (type === 'target') state.selectedTargets = items;
-          else state.selectedVoices = items;
-
-          updateBadges(type);
-          renderOptions();
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            const jsonText = document.getElementById('jsonOutput').textContent;
+            const blob = new Blob([jsonText], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tiktok-review-prompt.json';
+            a.click();
         });
-      });
-    }
-
-    function generatePrompt(){
-      if (!elements.productName.value.trim()) return showError('กรุณากรอกชื่อสินค้า');
-      if (!elements.productDetails.value.trim()) return showError('กรุณากรอกรายละเอียดสินค้า');
-      if (!state.selectedGender) return showError('กรุณาเลือก Model เสียงพูด');
-
-      state.productName = elements.productName.value.trim();
-      state.productDetails = elements.productDetails.value.trim();
-
-      elements.loader.classList.add('active');
-      elements.copyBtn.classList.remove('show');
-
-      setTimeout(() => {
-        const jsonData = createJSONPrompt();
-        displayJSON(jsonData);
-        elements.loader.classList.remove('active');
-        elements.copyBtn.classList.add('show');
-        showSuccess();
-      }, 450);
-    }
-
-    function pickLineWithActions(pack, sceneKey, productName){
-      const arr = pack[sceneKey];
-      const chosen = arr[Math.floor(Math.random() * arr.length)];
-      const dialogue = chosen.dialogue.replace(/\$\{productName\}/g, productName);
-      const actions = chosen.actions.map(a => a.replace(/\$\{productName\}/g, productName));
-      return { dialogue, actions };
-    }
-
-    function createJSONPrompt(){
-      const productName = state.productName;
-      const pack = state.selectedGender === 'male' ? maleScripts : femaleScripts;
-
-      const s1 = pickLineWithActions(pack, 'scene1', productName);
-      const s2 = pickLineWithActions(pack, 'scene2', productName);
-      const s3 = pickLineWithActions(pack, 'scene3', productName);
-
-      return {
-        projectMetadata: {
-          platform: "TikTok",
-          videoFormat: "9:16 (Vertical)",
-          duration: "24 seconds",
-          totalScenes: 3,
-          sceneLength: "8 seconds each",
-          productName: productName,
-          generatedAt: new Date().toISOString()
-        },
-        productInformation: {
-          name: productName,
-          description: state.productDetails,
-          keyFeatures: state.productDetails.split('\n').filter(line => line.trim())
-        },
-        modelConfiguration: {
-          voiceGender: state.selectedGender === 'male' ? 'Male' : 'Female',
-          voiceCharacter: state.selectedGender === 'male'
-            ? 'Thai male reviewer (natural, confident, stop-scroll)'
-            : 'Thai female reviewer (natural, catchy, stop-scroll)',
-          voiceStyles: state.selectedVoices.length > 0 ? state.selectedVoices : ['Professional & Warm'],
-          targetAudiences: state.selectedTargets.length > 0 ? state.selectedTargets : ['General Audience'],
-          tones: state.selectedTones.length > 0 ? state.selectedTones : ['Engaging & Authentic']
-        },
-        productionGuidelines: {
-          videoQuality: "High-End / Premium",
-          cameraStyles: [
-            "Wide shot product reveal",
-            "Close-up detail showcase",
-            "Product in hand/worn demonstration",
-            "Dynamic tracking shot",
-            "POV (Point of View) shot",
-            "360-degree product rotation",
-            "Slow-motion feature highlight",
-            "Professional studio setting"
-          ],
-          lighting: "Professional three-point lighting with emphasis on product highlights and reflections",
-          colorGrading: "Cinematic color grading with warm or cool tones matching product aesthetic",
-          transitions: "Smooth, fast-paced cuts maintaining energy and momentum",
-          backgroundMusic: "Cinematic background score that complements the product and emotional tone",
-          soundDesign: "Product interaction sounds, subtle effects, clear voice without distortion",
-          prohibitions: {
-            noBodyClipping: "Ensure no human bodies pass through or overlap product areas",
-            noHandClipping: "Hands only visible when intentionally handling/demonstrating product",
-            noTextOverlay: "Clean video frame - no text, watermarks, or captions",
-            noGreeting: "Skip greeting phrases - start with impact and attention-grabbing statements",
-            noGoodbye: "End with strong call-to-action, not goodbye phrases"
-          }
-        },
-        sceneBreakdown: [
-          {
-            sceneNumber: 1,
-            duration: "8 seconds",
-            title: "Hook & Product Introduction",
-            purpose: "Stop-scroll hook + introduce product naturally (NO greeting word).",
-            cameraAngles: [
-              "Opening wide shot showing product in dynamic lighting",
-              "Quick zoom to most striking feature",
-              "Dramatic product reveal with slight slow-motion"
-            ],
-            voiceScriptThai: s1.dialogue,
-            actorActions: s1.actions,
-            voiceDirection: {
-              language: "Thai",
-              style: "รีวิวแบบคนจริง จังหวะเป็นธรรมชาติ",
-              pacing: "ประโยคสั้น ชัด จบใน ~8 วิ",
-              energy: "เริ่มให้สะดุดทันที",
-              rule: "ห้ามใช้คำว่า 'สวัสดี' ในฉากที่ 1"
-            },
-            audioCues: [
-              "SFX: เสียงจับ/แตะ/ขยับสินค้าเบาๆ ให้รู้สึกของจริง",
-              "BGM: จังหวะเปิดดึงความสนใจ (ไม่กลบเสียงพูด)"
-            ],
-            constraints: {
-              noBodyClipping: true,
-              noHandClipping: "Only hands holding/showing product",
-              noText: true,
-              productVisibility: "80%+"
-            }
-          },
-          {
-            sceneNumber: 2,
-            duration: "8 seconds",
-            title: "Features & Benefits Deep Dive",
-            purpose: "โชว์ดีเทล + ใช้งานจริง + พูดให้เชื่อแบบเพื่อนแนะนำ",
-            cameraAngles: [
-              "360-degree product rotation",
-              "Close-up of key details",
-              "Product usage demonstration",
-              "Feature interaction show"
-            ],
-            voiceScriptThai: s2.dialogue,
-            actorActions: s2.actions,
-            voiceDirection: {
-              language: "Thai",
-              style: "เล่าแบบใช้จริง ไม่เป็นพิธีการ",
-              pacing: "ลื่น ไว แต่ฟังทัน",
-              emotion: "มั่นใจ + จริงใจ"
-            },
-            audioCues: [
-              "SFX: เสียงใช้งาน/สวม/คลิก/เสียดสี ตามประเภทสินค้า",
-              "BGM: เพิ่มความพุ่งขึ้นเล็กน้อย"
-            ],
-            constraints: {
-              noBodyClipping: true,
-              noHandClipping: "Hands visible only during demonstration",
-              noText: true,
-              smoothTransitions: "Seamless angle changes",
-              productVisibility: "75%+"
-            }
-          },
-          {
-            sceneNumber: 3,
-            duration: "8 seconds",
-            title: "Close & Sell (CTA)",
-            purpose: "ปิดจบแบบรีวิวขายสินค้า ‘จึ้งๆ’ ให้คนอยากซื้อทันที",
-            cameraAngles: [
-              "Final product showcase with cinematic lighting",
-              "Model holding/wearing product with confident expression",
-              "Last impactful product shot with effect"
-            ],
-            voiceScriptThai: s3.dialogue,
-            actorActions: s3.actions,
-            voiceDirection: {
-              language: "Thai",
-              style: "ปิดจบมั่นใจ ชวนตัดสินใจ",
-              pacing: "กระชับ จบพอดี",
-              rule: "ห้ามกล่าวลา ให้จบด้วยคำแนะนำ/ชวนลอง"
-            },
-            audioCues: [
-              "BGM: ดรอปแล้วพุ่งปิดท้ายให้จำได้",
-              "SFX: whoosh เบาๆ ตอนฮีโร่ช็อตสินค้า"
-            ],
-            constraints: {
-              noBodyClipping: true,
-              noHandClipping: "Professional product handling",
-              noText: true,
-              productVisibility: "85%+"
-            }
-          }
-        ],
-        voicePerformance: {
-          thaiSpeaking: true,
-          naturalSpeech: "พูดเหมือนคนรีวิวจริง มีจังหวะหายใจ/หัวเราะเบาๆ ได้",
-          stopScrollFactor: "เปิดด้วยคำที่ทำให้หยุดดู + แอคชั่นดึงสายตา",
-          lengthControl: "ประโยคสั้น เพื่อจบใน 8 วิ/ฉาก",
-          endingCTA: "จบด้วยประโยคขายของ/แนะนำแบบมั่นใจ (ไม่มีคำลา)"
-        },
-        criticalRequirements: {
-          continuity: "ทั้ง 3 ฉากเป็นสินค้าเดียวกัน ต่อเนื่องไหลลื่น",
-          noTextInVideo: true,
-          noClipping: "ตัว/มือห้ามทะลุสินค้า/สิ่งของ",
-          cinematic: "มุมกล้องหลากหลาย ภาพระดับ High-End"
-        }
-      };
-    }
-
-    function displayJSON(data){
-      elements.jsonOutput.textContent = JSON.stringify(data, null, 2);
-      window.currentJSON = JSON.stringify(data, null, 2);
-    }
-
-    function copyToClipboard(){
-      if (!window.currentJSON) return;
-      navigator.clipboard.writeText(window.currentJSON).then(() => {
-        elements.copyBtn.textContent = '✓ คัดลอกแล้ว!';
-        elements.copyBtn.classList.add('copied');
-        setTimeout(() => {
-          elements.copyBtn.textContent = '📋 คัดลอก JSON';
-          elements.copyBtn.classList.remove('copied');
-        }, 2000);
-      });
-    }
-
-    function resetForm(){
-      elements.productName.value = '';
-      elements.productDetails.value = '';
-      elements.productImage.value = '';
-      elements.imagePreview.classList.remove('show');
-
-      state = {
-        productName: '',
-        productDetails: '',
-        selectedGender: null,
-        selectedTones: [],
-        selectedTargets: [],
-        selectedVoices: [],
-        currentFilter: 'all'
-      };
-
-      document.querySelectorAll('.gender-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.option-item').forEach(item => item.classList.remove('selected'));
-      document.querySelectorAll('.selected-badges').forEach(b => b.innerHTML = '');
-
-      elements.jsonOutput.textContent = `{
-  "status": "waiting",
-  "message": "กรุณากรอกข้อมูลสินค้าและคลิก 'สร้าง Prompt'"
-}`;
-      elements.copyBtn.classList.remove('show');
-    }
-
-    function showSuccess(){
-      elements.successMsg.classList.add('show');
-      setTimeout(() => elements.successMsg.classList.remove('show'), 2500);
-    }
-    function showError(message){
-      elements.errorMsg.textContent = '⚠ ' + message;
-      elements.errorMsg.classList.add('show');
-      setTimeout(() => elements.errorMsg.classList.remove('show'), 3000);
-    }
-
-    window.addEventListener('DOMContentLoaded', init);
-  </script>
+    </script>
 </body>
 </html>
-```
